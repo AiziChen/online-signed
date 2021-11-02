@@ -3,6 +3,7 @@
 (require koyo/random
          racket/gui/base
          racket/class
+         gregor
          db
          "models/users.rkt")
 
@@ -11,9 +12,20 @@
        [width 560]
        [height 500]))
 
+(define top-hpanel
+  (new horizontal-panel%
+       [parent frame]
+       [stretchable-height #f]
+       [alignment '(center top)]))
+
+(define center-vpanel
+  (new vertical-panel%
+       [parent frame]))
+
+
 (define add-btn
   (new button%
-       [parent frame]
+       [parent top-hpanel]
        [label "添加"]
        [callback
         (lambda (btn evt)
@@ -27,14 +39,18 @@
                    (message-box "添加激活码" "添加失败" frame '(ok no-icon)))]
               [(cancel) (void)])))]))
 
-#;
-(define top-hpanel
-  (new horizontal-panel%
-       [parent frame]))
+(define refresh-btn
+  (new button%
+       [parent top-hpanel]
+       [label "刷新"]
+       [callback
+        (lambda (btn evt)
+          (update-users-list))]))
+
 
 (define users-list-box
   (new list-box%
-       [parent frame]
+       [parent center-vpanel]
        [label #f]
        [choices '()]))
 
@@ -45,7 +61,8 @@
             (for/list ([u users])
               (string-append
                "mac地址:" (user-mac u)
-               "|激活码:" (user-serial-no u))))))
+               "|激活码:" (user-serial-no u)
+               "|更新时间:" (datetime->iso8601 (user-updated-at u)))))))
 
 (void
  (thread
