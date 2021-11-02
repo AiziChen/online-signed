@@ -1,0 +1,81 @@
+#lang racket/base
+
+(require deta
+         threading
+         gregor
+         db
+         racket/sequence
+         racket/string
+         racket/contract
+         "../sql-connector.rkt")
+
+(provide
+ (schema-out user)
+ user-signed?
+ user-exists?
+ user-exists-all?
+ user-insert!
+ user-update-mac!
+ get-all-users)
+
+;;; USER MODEL
+(define-schema user
+  ([id id/f #:primary-key #:auto-increment]
+   [[mac ""] string/f]
+   [serial-no string/f #:unique #:contract non-empty-string?]
+   [[created-at (now)] datetime/f]
+   [[updated-at (now)] datetime/f]))
+
+;;; initial user
+(unless (table-exists? *conn* "users")
+  (create-table! *conn* 'user))
+
+;;; LOGICS
+(define (user-signed? serial-no)
+  (define rs
+    (for/list ([b (in-entities *conn*
+                               (~> (from user #:as u)
+                                   (where (and (not (= u.mac ""))
+                                               (= u.serial-no ,serial-no)))))])
+      (user-id b)))
+  (>= (length rs) 1))
+
+(define (user-exists? serial-no)
+  (define rs
+    (for/list ([b (in-entities *conn*
+                               (~> (from user #:as u)
+                                   (where (= u.serial-no ,serial-no))))])
+      (user-id b)))
+  (>= (length rs) 1))
+
+(define (user-exists-all? mac serial-no)
+  (define rs
+    (for/list ([b (in-entities *conn*
+                               (~> (from user #:as u)
+                                   (where (and (= u.mac ,mac)
+                                               (= u.serial-no ,serial-no)))))])
+      (user-id b)))
+  (>= (length rs) 1))
+
+;;; INSERT
+(define (user-insert! mac serial-no [updated-at (now)])
+  (insert-one! *conn*
+               (make-user #:mac mac
+                          #:serial-no serial-no
+                          #:updated-at updated-at)))
+
+;;; UPDATE
+(define (user-update-mac! mac serial-no)
+  (define u
+    (lookup *conn*
+            (~> (from user #:as u)
+                (where (and (= mac "")
+                            (= u.serial-no ,serial-no))))))
+  (if u
+      (update-one! *conn* (update-user-mac u (lambda (_) mac)))
+      #f))
+
+(define (get-all-users)
+  (for/list ([b (in-entities *conn*
+                             (~> (from user #:as u)))])
+    b))
