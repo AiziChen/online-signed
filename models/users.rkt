@@ -16,7 +16,8 @@
  user-exists-all?
  user-insert!
  user-update-mac!
- get-all-users)
+ get-all-users
+ check-unique)
 
 ;;; USER MODEL
 (define-schema user
@@ -79,3 +80,12 @@
   (for/list ([b (in-entities *conn*
                              (~> (from user #:as u)))])
     b))
+
+;;; CHECK
+
+(define (check-unique serial-no)
+  (define u
+    (lookup *conn*
+            (~> (from user #:as u)
+                (where (= u.serial-no ,serial-no)))))
+  (if u #f #t))
