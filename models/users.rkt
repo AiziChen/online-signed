@@ -17,6 +17,7 @@
  user-insert!
  user-update-mac!
  get-all-users
+ delete-user-by-id!
  check-unique)
 
 ;;; USER MODEL
@@ -80,6 +81,16 @@
   (for/list ([b (in-entities *conn*
                              (~> (from user #:as u)))])
     b))
+
+;;; DELETE
+(define (delete-user-by-id! id)
+  (define u
+    (lookup *conn*
+            (~> (from user #:as u)
+                (where (and (= u.id ,id))))))
+  (if u
+      (delete-one! *conn* u)
+      #f))
 
 ;;; CHECK
 
