@@ -4,7 +4,6 @@
          racket/gui/base
          racket/class
          gregor
-         db
          "models/users.rkt")
 
 (struct UserData (user-id mac serial-no datetime) #:transparent)

@@ -4,9 +4,7 @@
          threading
          gregor
          db
-         racket/sequence
          racket/string
-         racket/contract
          "../sql-connector.rkt")
 
 (provide
