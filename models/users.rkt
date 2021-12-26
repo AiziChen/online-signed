@@ -79,7 +79,8 @@
 
 (define (get-all-users)
   (for/list ([b (in-entities *conn*
-                             (~> (from user #:as u)))])
+                             (~> (from user #:as u)
+                                 (order-by ([u.id #:desc]))))])
     b))
 
 ;;; DELETE
