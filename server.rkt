@@ -1,18 +1,13 @@
 #lang racket/base
 (require koyo/dispatch
-         koyo/url
          koyo/cors
          koyo/static
-         koyo/random
          web-server/dispatch
          web-server/web-server
          web-server/servlet-dispatch
          web-server/http/json
-         net/base64
-         json
          (prefix-in sequencer: web-server/dispatchers/dispatch-sequencer)
          racket/list
-         "tools.rkt"
          "abstract.rkt")
 
 (define-values (dispatch url roles)
@@ -38,5 +33,5 @@
    #:port 80))
 
 (with-handlers
-  ([exn:break? (lambda (_) (stop))])
+    ([exn:break? (lambda (_) (stop))])
   (sync/enable-break never-evt))

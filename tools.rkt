@@ -7,14 +7,14 @@
 
 (define/contract (xor-cipher data secret)
   (-> bytes? non-empty-string? bytes?)
-  (let ([secret-len (string-length secret)])
-    (list->bytes
-     (let loop ([ls (bytes->list data)]
-                [i 0])
-       (if (null? ls)
-           '()
-           (let ([rem (remainder i secret-len)])
-             (cons (bitwise-xor
-                    (bitwise-xor (car ls) (char->integer (string-ref secret rem)))
-                    rem)
-                   (loop (cdr ls) (+ i 1)))))))))
+  (define data-len (bytes-length data))
+  (define secret-len (string-length secret))
+  (let lp ([i 0])
+    (cond
+      [(= i data-len) data]
+      [else
+       (define rem (remainder i secret-len))
+       (bytes-set! data i
+                   (bitwise-xor (bytes-ref data i)
+                                (bitwise-ior (char->integer (string-ref secret rem)) rem)))
+       (lp (+ i 1))])))
