@@ -1,14 +1,9 @@
 #lang racket/base
 
-(require koyo/http
-         koyo/url
-         koyo/random
-         deta
-         web-server/http/json
+(require web-server/http/json
          net/base64
          json
          "tools.rkt"
-         "sql-connector.rkt"
          "models/users.rkt")
 
 (provide
