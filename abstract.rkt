@@ -14,13 +14,13 @@
 (define (code-verify req b64-data)
   (with-handlers ([exn? (lambda (_) (response/jsexpr "error"))])
     (let* ([en-data (base64-decode (string->bytes/utf-8 b64-data))]
-           [jdata (bytes->jsexpr (xor-cipher en-data *pass*))]
+           [jdata (bytes->jsexpr (xor-cipher! en-data *pass*))]
            [mac-str (hash-ref jdata 'mac #f)]
            [serial-no (hash-ref jdata 'serial-no #f)])
       (if (and mac-str serial-no (user-exists? serial-no))
           (let* ([pre-response-data (hasheq 'time (current-milliseconds)
                                             'random serial-no)]
-                 [response-data (xor-cipher (jsexpr->bytes pre-response-data) *pass*)]
+                 [response-data (xor-cipher! (jsexpr->bytes pre-response-data) *pass*)]
                  [en-response-data (base64-encode response-data "")])
             (cond
               [(user-exists-all? mac-str serial-no)

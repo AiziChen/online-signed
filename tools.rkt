@@ -3,9 +3,9 @@
 (require racket/contract
          racket/string)
 
-(provide xor-cipher)
+(provide xor-cipher!)
 
-(define/contract (xor-cipher data secret)
+(define/contract (xor-cipher! data secret)
   (-> bytes? non-empty-string? bytes?)
   (define data-len (bytes-length data))
   (define secret-len (string-length secret))
