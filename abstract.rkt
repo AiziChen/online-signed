@@ -1,6 +1,7 @@
 #lang racket/base
 
 (require web-server/http/json
+         web-server/http/request-structs
          net/base64
          json
          "tools.rkt"
@@ -11,12 +12,14 @@
 
 (define *pass* "test")
 
-(define (code-verify req b64-data)
+(define (code-verify req)
   (with-handlers ([exn? (lambda (_) (response/jsexpr "error"))])
-    (let* ([en-data (base64-decode (string->bytes/utf-8 b64-data))]
+    (let* ([b64-data (request-post-data/raw req)]
+           [en-data (base64-decode b64-data)]
            [jdata (bytes->jsexpr (xor-cipher! en-data *pass*))]
            [mac-str (hash-ref jdata 'mac #f)]
            [serial-no (hash-ref jdata 'serial-no #f)])
+        (displayln mac-str)
       (if (and mac-str serial-no (user-exists? serial-no))
           (let* ([pre-response-data (hasheq 'time (current-milliseconds)
                                             'random serial-no)]

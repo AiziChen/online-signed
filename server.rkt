@@ -13,7 +13,9 @@
 (define-values (dispatch url roles)
   (dispatch-rules+roles
    [("") (lambda (_) (response/jsexpr "server is on."))]
-   [("code-verify" (string-arg)) code-verify]))
+   [("code-verify")
+    #:method "post"
+    code-verify]))
 
 
 (current-cors-origin "*")
