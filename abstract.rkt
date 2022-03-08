@@ -11,6 +11,7 @@
  code-verify)
 
 (define *pass* "test")
+(define *duration* 20)
 
 (define (code-verify req)
   (with-handlers ([exn? (lambda (_) (response/jsexpr "error"))])
@@ -18,9 +19,12 @@
            [en-data (base64-decode b64-data)]
            [jdata (bytes->jsexpr (xor-cipher! en-data *pass*))]
            [mac-str (hash-ref jdata 'mac #f)]
-           [serial-no (hash-ref jdata 'serial-no #f)])
-        (displayln mac-str)
-      (if (and mac-str serial-no (user-exists? serial-no))
+           [serial-no (hash-ref jdata 'serial-no #f)]
+           [mpass (hash-ref jdata 'mpass)])
+      (if (and mac-str
+               serial-no
+               (user-exists? serial-no)
+               (verify-pass mpass (get-passes *duration*)))
           (let* ([pre-response-data (hasheq 'time (current-milliseconds)
                                             'random serial-no)]
                  [response-data (xor-cipher! (jsexpr->bytes pre-response-data) *pass*)]

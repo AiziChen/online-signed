@@ -1,9 +1,14 @@
 #lang racket/base
 
 (require racket/contract
-         racket/string)
+         racket/string
+         racket/math)
 
-(provide xor-cipher!)
+(provide
+ xor-cipher!
+ now-pass
+ get-passes
+ verify-pass)
 
 (define/contract (xor-cipher! data secret)
   (-> bytes? non-empty-string? bytes?)
@@ -15,3 +20,24 @@
                 (bitwise-xor (bytes-ref data i)
                              (bitwise-ior (char->integer (string-ref secret rem)) rem))))
   data)
+
+(define/contract (now-pass duration)
+  (-> positive-integer? positive-integer?)
+  (let* ([s (current-seconds)]
+         [remain (remainder s duration)]
+         [current-s (- s remain)])
+    current-s))
+
+(define/contract (get-passes duration)
+  (-> positive-integer? (listof positive-integer?))
+  (let* ([s (current-seconds)]
+         [remain (remainder s duration)]
+         [current-s (- s remain)]
+         [next-s (+ current-s duration)]
+         [previous-s (- current-s duration)])
+    (list current-s previous-s next-s)))
+
+
+(define/contract (verify-pass pass duration)
+  (-> positive-integer? positive-integer? (or/c #f (listof positive-integer?)))
+  (member pass (get-passes duration)))
