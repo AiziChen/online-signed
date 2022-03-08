@@ -24,7 +24,7 @@
       (if (and mac-str
                serial-no
                (user-exists? serial-no)
-               (verify-pass mpass (get-passes *duration*)))
+               (verify-pass mpass *duration*))
           (let* ([pre-response-data (hasheq 'time (current-milliseconds)
                                             'random serial-no)]
                  [response-data (xor-cipher! (jsexpr->bytes pre-response-data) *pass*)]
