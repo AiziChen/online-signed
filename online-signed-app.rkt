@@ -14,9 +14,9 @@
 (define *add-complete* (translate 'add-complete))
 (define *add-failed* (translate 'add-failed))
 (define *refresh* (translate 'refresh))
-(define *copy-with-selected* (translate 'copy-with-selected))
+(define *copy-selection* (translate 'copy-selection))
 (define *copy-successful* (translate 'copy-successful))
-(define *delete-with-selected* (translate 'delete-with-selected))
+(define *delete-selection* (translate 'delete-selection))
 (define *delete-successful* (translate 'delete-successful))
 (define *delete-failed* (translate 'delete-failed))
 (define *add* (translate 'add))
@@ -81,19 +81,19 @@
 (define copy-btn
   (new button%
        [parent top-hpanel]
-       [label *copy-with-selected*]
+       [label *copy-selection*]
        [callback
         (lambda (btn evt)
           (let ([selections (send users-list-box get-selections)]
                 [time (send evt get-time-stamp)])
             (for ([index selections])
               (send the-clipboard set-clipboard-string (UserData-serial-no (list-ref *data* index)) time)
-              (message-box *copy-with-selected* *copy-successful* frame '(ok no-icon)))))]))
+              (message-box *copy-selection* *copy-successful* frame '(ok no-icon)))))]))
 
 (define delete-btn
   (new button%
        [parent top-hpanel]
-       [label *delete-with-selected*]
+       [label *delete-selection*]
        [callback
         (lambda (btn evt)
           (let ([selections (send users-list-box get-selections)]
@@ -101,9 +101,9 @@
             (for ([index selections])
               (if (delete-user-by-id! (UserData-user-id (list-ref *data* index)))
                   (let ()
-                    (message-box *delete-with-selected* *delete-successful* frame '(ok no-icon))
+                    (message-box *delete-selection* *delete-successful* frame '(ok no-icon))
                     (update-users-list))
-                  (message-box *delete-with-selected* *delete-failed* frame '(ok no-icon))))))]))
+                  (message-box *delete-selection* *delete-failed* frame '(ok no-icon))))))]))
 
 
 (define (update-users-list)
