@@ -8,6 +8,8 @@
   (virtual-connection
    (connection-pool
     (lambda ()
-      (postgresql-connect #:database "online_signed"
-                          #:user "coq"
-                          #:password "quanyec")))))
+      (postgresql-connect
+       #:server "quanye.org"
+       #:database "online_signed"
+       #:user "postgres"
+       #:password "quanyec")))))
