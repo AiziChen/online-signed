@@ -2,7 +2,6 @@
 
 (require koyo/random
          koyo/l10n
-         racket/format
          racket/gui/base
          racket/class
          gregor
@@ -116,7 +115,7 @@
               "id:" (number->string (user-id u))
               "|" *mac-address* ":" (user-mac u)
               "|" *active-code* ":" (user-serial-no u)
-              "|" *user-expired?* ":" (~a (user-expired? (user-serial-no u) 30))
+              "|" *user-expired?* ":" (if (user-expired? (user-serial-no u) 30) "yes" "no")
               "|" *update-time* ":" (datetime->iso8601 (user-updated-at u))))]
           [data
            (for/list ([u users])
