@@ -22,7 +22,7 @@
 (define *add* (translate 'add))
 (define *mac-address* (translate 'mac-address))
 (define *active-code* (translate 'active-code))
-(define *user-expired?* (translate 'user-expired?))
+(define *active-date* (translate 'active-date))
 (define *update-time* (translate 'update-time))
 
 (struct UserData (user-id mac serial-no datetime) #:transparent)
@@ -115,7 +115,7 @@
               "id:" (number->string (user-id u))
               "|" *active-code* ":" (user-serial-no u)
               "|" *mac-address* ":" (user-mac u)
-              "|" *user-expired?* ":" (if (user-expired? (user-serial-no u) 30) "yes" "no")
+              "|" *active-date* ":" (number->string (user-active-date (user-serial-no u)))
               "|" *update-time* ":" (datetime->iso8601 (user-updated-at u))))]
           [data
            (for/list ([u users])

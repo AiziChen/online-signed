@@ -13,6 +13,6 @@
   (add . "Add")
   (mac-address . "mac Address")
   (active-code . "Active code")
-  (user-expired? . "User expired?")
+  (active-date . "Active date")
   (update-time . "Updated time")
 )
