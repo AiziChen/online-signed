@@ -73,7 +73,9 @@
                 (where (and (= mac "")
                             (= u.serial-no ,serial-no))))))
   (if u
-      (update-one! *conn* (update-user-mac u (lambda (_) mac)))
+      (update! *conn*
+               (update-user-mac u (lambda (_) mac))
+               (update-user-updated-at u (lambda (_) (now))))
       #f))
 
 (define (get-all-users)
@@ -107,8 +109,6 @@
     (lookup *conn*
             (~> (from user #:as u)
                 (where (= u.serial-no ,serial-no)))))
-  (cond
-    [u
-     (define created-at (user-created-at u))
-     (not (and created-at (> (+ (days-between (now) (->datetime/local created-at)) expired-date) 0)))]
-    [else #f]))
+  (and u
+       (let ([updated-at (user-updated-at u)])
+         (not (and updated-at (> (+ (days-between (now) (->datetime/local updated-at)) expired-date) 0))))))

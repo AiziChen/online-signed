@@ -113,8 +113,8 @@
            (for/list ([u users])
              (string-append
               "id:" (number->string (user-id u))
-              "|" *mac-address* ":" (user-mac u)
               "|" *active-code* ":" (user-serial-no u)
+              "|" *mac-address* ":" (user-mac u)
               "|" *user-expired?* ":" (if (user-expired? (user-serial-no u) 30) "yes" "no")
               "|" *update-time* ":" (datetime->iso8601 (user-updated-at u))))]
           [data
