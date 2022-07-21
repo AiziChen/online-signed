@@ -14,6 +14,7 @@
  user-exists-all?
  user-insert!
  user-update-mac!
+ user-unregister-mac!
  get-all-users
  delete-user-by-id!
  check-unique
@@ -72,11 +73,19 @@
             (~> (from user #:as u)
                 (where (and (= mac "")
                             (= u.serial-no ,serial-no))))))
-  (if u
-      (update! *conn*
-               (update-user-mac u (lambda (_) mac))
-               (update-user-updated-at u (lambda (_) (now))))
-      #f))
+  (and u (update! *conn*
+                  (update-user-mac u (lambda (_) mac))
+                  (update-user-updated-at u (lambda (_) (now))))))
+
+(define (user-unregister-mac! id)
+  (define u
+    (lookup *conn*
+            (~> (from user #:as u)
+                (where (= u.id ,id)))))
+  (and u (update! *conn*
+                  (update-user-mac u (lambda (_) ""))
+                  (update-user-updated-at u (lambda (_) (user-updated-at u))))))
+
 
 (define (get-all-users)
   (for/list ([b (in-entities *conn*
@@ -111,5 +120,5 @@
                 (where (= u.serial-no ,serial-no)))))
   (if u
       (let ([updated-at (user-updated-at u)])
-        (days-between (->datetime/local updated-at) (now)))
+        (+ (days-between (->datetime/local updated-at) (now)) 1))
       -1))

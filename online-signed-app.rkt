@@ -16,6 +16,9 @@
 (define *refresh* (translate 'refresh))
 (define *copy-selection* (translate 'copy-selection))
 (define *copy-successful* (translate 'copy-successful))
+(define *unregister-selection* (translate 'unregister-selection))
+(define *unregister-successful* (translate 'unregister-successful))
+(define *unregister-failed* (translate 'unregister-failed))
 (define *delete-selection* (translate 'delete-selection))
 (define *delete-successful* (translate 'delete-successful))
 (define *delete-failed* (translate 'delete-failed))
@@ -90,6 +93,21 @@
             (for ([index selections])
               (send the-clipboard set-clipboard-string (UserData-serial-no (list-ref *data* index)) time)
               (message-box *copy-selection* *copy-successful* frame '(ok no-icon)))))]))
+
+(define unregister-btn
+  (new button%
+       [parent top-hpanel]
+       [label *unregister-selection*]
+       [callback
+        (lambda (btn evt)
+          (let ([selections (send users-list-box get-selections)]
+                [time (send evt get-time-stamp)])
+            (for ([index selections])
+              (if (user-unregister-mac! (UserData-user-id (list-ref *data* index)))
+                  (let ()
+                    (message-box *unregister-selection* *unregister-successful* frame '(ok no-icon))
+                    (update-users-list))
+                  (message-box *unregister-selection* *unregister-failed* frame '(ok no-icon))))))]))
 
 (define delete-btn
   (new button%
