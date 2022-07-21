@@ -2,6 +2,7 @@
 
 (require koyo/random
          koyo/l10n
+         racket/format
          racket/gui/base
          racket/class
          gregor
@@ -22,6 +23,7 @@
 (define *add* (translate 'add))
 (define *mac-address* (translate 'mac-address))
 (define *active-code* (translate 'active-code))
+(define *user-expired?* (translate 'user-expired?))
 (define *update-time* (translate 'update-time))
 
 (struct UserData (user-id mac serial-no datetime) #:transparent)
@@ -114,6 +116,7 @@
               "id:" (number->string (user-id u))
               "|" *mac-address* ":" (user-mac u)
               "|" *active-code* ":" (user-serial-no u)
+              "|" *user-expired?* ":" (~a (user-expired? (user-serial-no u) 30))
               "|" *update-time* ":" (datetime->iso8601 (user-updated-at u))))]
           [data
            (for/list ([u users])

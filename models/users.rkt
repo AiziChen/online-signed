@@ -16,7 +16,8 @@
  user-update-mac!
  get-all-users
  delete-user-by-id!
- check-unique)
+ check-unique
+ user-expired?)
 
 ;;; USER MODEL
 (define-schema user
@@ -99,3 +100,15 @@
             (~> (from user #:as u)
                 (where (= u.serial-no ,serial-no)))))
   (if u #f #t))
+
+
+(define (user-expired? serial-no expired-date)
+  (define u
+    (lookup *conn*
+            (~> (from user #:as u)
+                (where (= u.serial-no ,serial-no)))))
+  (cond
+    [u
+     (define created-at (user-created-at u))
+     (not (and created-at (> (+ (days-between (now) (->datetime/local created-at)) expired-date) 0)))]
+    [else #f]))

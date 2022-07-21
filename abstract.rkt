@@ -10,8 +10,8 @@
 (provide
  code-verify)
 
-(define *pass* "test")
-(define *duration* 20)
+(define *pass* "TEST")
+(define *duration* 180)
 
 (define (code-verify req)
   (with-handlers ([exn? (lambda (_) (response/jsexpr "error"))])
@@ -26,7 +26,8 @@
                (user-exists? serial-no)
                (verify-pass mpass *duration*))
           (let* ([pre-response-data (hasheq 'time (current-milliseconds)
-                                            'random serial-no)]
+                                            'random serial-no
+                                            'expired? (user-expired? serial-no 30))]
                  [response-data (xor-cipher! (jsexpr->bytes pre-response-data) *pass*)]
                  [en-response-data (base64-encode response-data "")])
             (cond
