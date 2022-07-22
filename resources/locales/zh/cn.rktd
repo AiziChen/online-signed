@@ -17,6 +17,6 @@
   (add . "添加")
   (mac-address . "mac地址")
   (active-code . "激活码")
-  (active-date "激活天数")
+  (active-date . "激活天数")
   (update-time . "更新时间")
 )
