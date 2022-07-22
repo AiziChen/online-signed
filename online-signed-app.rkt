@@ -7,6 +7,7 @@
          racket/gui/base
          racket/class
          racket/string
+         racket/list
          "models/users.rkt"
          "tools.rkt")
 
@@ -33,7 +34,7 @@
 (define *update-time* (translate 'update-time))
 
 (struct User (user-id mac serial-no updated-at active-date comment) #:transparent)
-(define *users (make-hasheqv))
+(define *users '())
 
 (define frame
   (new frame% [label *app-title*]
@@ -82,9 +83,7 @@
                  (cond
                    [(user-insert-batch! active-codes)
                     =>
-                    (lambda (users)
-                      (for ([user users])
-                        (update-user user (hash-count *users) #f))
+                    (lambda (_users)
                       ;; update list box after added all of the users
                       (init-users)
                       (message-box *add-active-code* *add-complete* frame '(ok no-icon)))]
@@ -109,8 +108,8 @@
           (let ([index (send users-list-box get-selected-index)]
                 [time (send evt get-time-stamp)])
             (when index
-              (define user-id (User-user-id (list-ref (hash-values *users) index)))
-              (send the-clipboard set-clipboard-string (User-serial-no (hash-ref *users user-id)) time)
+              (define user-id (User-user-id (list-ref *users index)))
+              (send the-clipboard set-clipboard-string (User-serial-no (list-ref *users index)) time)
               (message-box *copy-selection* *copy-successful* frame '(ok no-icon)))))]))
 
 (define change-comment-btn
@@ -122,11 +121,11 @@
           (let ([index (send users-list-box get-selected-index)]
                 [time (send evt get-time-stamp)])
             (when index
-              (define user-id (User-user-id (list-ref (hash-values *users) index)))
+              (define user-id (User-user-id (list-ref *users index)))
               (let ([comment (get-text-from-user *change-comment* "Comment Content")])
                 (when (and comment (non-empty-string? comment))
                   (let ([users (user-update-comment! user-id comment)])
-                    (update-user (car users) user-id)))))))]))
+                    (update-user (car users) index)))))))]))
 
 (define unregister-btn
   (new button%
@@ -137,13 +136,13 @@
           (let ([index (send users-list-box get-selected-index)]
                 [time (send evt get-time-stamp)])
             (when index
-              (define user-id (User-user-id (list-ref (hash-values *users) index)))
+              (define user-id (User-user-id (list-ref *users index)))
               (cond
                 [(user-unregister-mac! user-id)
                  =>
                  (lambda (users)
                    (message-box *unregister-selection* *unregister-successful* frame '(ok no-icon))
-                   (update-user (car users) user-id))]
+                   (update-user (car users) index))]
                 [else
                  (message-box *unregister-selection* *unregister-failed* frame '(ok no-icon))]))))]))
 
@@ -156,36 +155,35 @@
           (let ([index (send users-list-box get-selected-index)]
                 [time (send evt get-time-stamp)])
             (when index
-              (define user-id (User-user-id (list-ref (hash-values *users) index)))
+              (define user-id (User-user-id (list-ref *users index)))
               (if (delete-user-by-id! user-id)
                   (let ()
                     (message-box *delete-selection* *delete-successful* frame '(ok no-icon))
-                    (hash-remove! *users user-id)
-                    (update-list-box))
+                    (init-users))
                   (message-box *delete-selection* *delete-failed* frame '(ok no-icon))))))]))
 
-(define (update-user user uid [with-ui #t])
-  (when (and user uid)
-    (hash-set! *users uid
-               (User (user-id user) (user-mac user)
-                     (user-serial-no user) (user-updated-at user)
-                     (get-active-date (user-updated-at user)) (user-comment user))))
+(define (update-user user index [with-ui #t])
+  (when (and user index)
+    (set! *users
+          (list-set *users index
+                    (User (user-id user) (user-mac user)
+                          (user-serial-no user) (user-updated-at user)
+                          (get-active-date (user-updated-at user)) (user-comment user)))))
   (when with-ui (update-list-box)))
 
 
 (define (init-users)
-  (hash-clear! *users)
   (let* ([users (get-all-users)])
-    (for ([u users])
-      (hash-set! *users (user-id u)
-                 (User (user-id u) (user-mac u)
-                       (user-serial-no u) (user-updated-at u)
-                       (get-active-date (user-updated-at u)) (user-comment u)))))
+    (set! *users
+          (for/list ([u users])
+            (User (user-id u) (user-mac u)
+                  (user-serial-no u) (user-updated-at u)
+                  (get-active-date (user-updated-at u)) (user-comment u)))))
   (update-list-box))
 
 (define (update-list-box)
   (define line
-    (for/list ([(id u) *users])
+    (for/list ([u *users])
       (string-append
        "id:" (number->string (User-user-id u))
        "|" *active-code* ":" (User-serial-no u)
