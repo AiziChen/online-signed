@@ -7,6 +7,7 @@
   (refresh . "刷新")
   (copy-selection . "复制选中")
   (copy-successful . "复制成功")
+  (change-comment . "更改备注")
   (unregister-selection . "解绑选中")
   (unregister-successful . "解绑成功")
   (unregister-failed . "解绑失败")

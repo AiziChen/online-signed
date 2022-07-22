@@ -1,6 +1,7 @@
 #lang racket/base
 
-(require racket/contract
+(require gregor
+         racket/contract
          racket/string
          racket/math)
 
@@ -8,7 +9,8 @@
  xor-cipher!
  now-pass
  get-passes
- verify-pass)
+ verify-pass
+ get-active-date)
 
 (define/contract (xor-cipher! data secret)
   (-> bytes? non-empty-string? bytes?)
@@ -41,3 +43,7 @@
 (define/contract (verify-pass pass duration)
   (-> positive-integer? positive-integer? (or/c #f (listof positive-integer?)))
   (member pass (get-passes duration)))
+
+
+(define (get-active-date updated-at)
+  (+ (days-between (->datetime/local updated-at) (now)) 1))

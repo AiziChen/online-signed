@@ -7,6 +7,7 @@
   (refresh . "Refresh")
   (copy-selection . "Copy selection")
   (copy-successful . "Copy succssful")
+  (change-comment . "Change comment")
   (unregister-selection . "Unregister selection")
   (unregister-successful . "Unregister successful")
   (unregister-failed . "Unregister failed")

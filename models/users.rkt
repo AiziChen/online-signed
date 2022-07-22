@@ -13,8 +13,10 @@
  user-exists?
  user-exists-all?
  user-insert!
+ user-insert-batch!
  user-update-mac!
  user-unregister-mac!
+ user-update-comment!
  get-all-users
  delete-user-by-id!
  check-unique
@@ -25,6 +27,7 @@
   ([id id/f #:primary-key #:auto-increment]
    [[mac ""] string/f]
    [serial-no string/f #:unique #:contract non-empty-string?]
+   [[comment ""] string/f]
    [[created-at (now)] datetime/f]
    [[updated-at (now)] datetime/f]))
 
@@ -66,6 +69,11 @@
                           #:serial-no serial-no
                           #:updated-at updated-at)))
 
+(define (user-insert-batch! serial-nos)
+  (apply insert!
+         (cons *conn* (for/list ([serial-no serial-nos])
+                        (make-user #:serial-no serial-no)))))
+
 ;;; UPDATE
 (define (user-update-mac! mac serial-no)
   (define u
@@ -86,12 +94,20 @@
                   (update-user-mac u (lambda (_) ""))
                   (update-user-updated-at u (lambda (_) (user-updated-at u))))))
 
+(define (user-update-comment! id comment)
+  (define u
+    (lookup *conn* (~> (from user #:as u)
+                       (where (= u.id ,id)))))
+  (and u (update! *conn* (update-user-comment u (lambda (_) comment)))))
 
+
+;;; QUERY
 (define (get-all-users)
   (for/list ([b (in-entities *conn*
                              (~> (from user #:as u)
                                  (order-by ([u.id #:desc]))))])
     b))
+
 
 ;;; DELETE
 (define (delete-user-by-id! id)

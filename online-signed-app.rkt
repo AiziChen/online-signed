@@ -2,10 +2,13 @@
 
 (require koyo/random
          koyo/l10n
+         gregor
+         canvas-list
          racket/gui/base
          racket/class
-         gregor
-         "models/users.rkt")
+         racket/string
+         "models/users.rkt"
+         "tools.rkt")
 
 (load-locales! "resources/locales/")
 (define *app-title* (translate 'app-title))
@@ -16,6 +19,7 @@
 (define *refresh* (translate 'refresh))
 (define *copy-selection* (translate 'copy-selection))
 (define *copy-successful* (translate 'copy-successful))
+(define *change-comment* (translate 'change-comment))
 (define *unregister-selection* (translate 'unregister-selection))
 (define *unregister-successful* (translate 'unregister-successful))
 (define *unregister-failed* (translate 'unregister-failed))
@@ -28,8 +32,8 @@
 (define *active-date* (translate 'active-date))
 (define *update-time* (translate 'update-time))
 
-(struct UserData (user-id mac serial-no datetime) #:transparent)
-(define *data* #f)
+(struct User (user-id mac serial-no updated-at active-date comment) #:transparent)
+(define *users (make-hasheqv))
 
 (define frame
   (new frame% [label *app-title*]
@@ -48,10 +52,10 @@
 
 
 (define users-list-box
-  (new list-box%
+  (new canvas-list%
        [parent center-vpanel]
        [label #f]
-       [choices '()]))
+       [items '()]))
 
 
 (define add-btn
@@ -60,18 +64,32 @@
        [label *add*]
        [callback
         (lambda (btn evt)
-          (let loop ([random-str (generate-random-string 6)])
-            (when (not (check-unique random-str))
-              (loop (generate-random-string 6)))
+          (define countstr (get-text-from-user "How much active code would you add?" "active code numbers"))
+          (define count (and countstr (string->number countstr)))
+          (when count
+            (define active-codes
+              (for/list ([_ count])
+                (let loop ([random-str (generate-random-string 6)])
+                  (when (not (check-unique random-str))
+                    (loop (generate-random-string 6)))
+                  random-str)))
             (let* ([content (message-box *add-active-code*
-                                         (string-append *add-active-code?* ":\n" random-str)
+                                         (string-append *add-active-code?* ":\n"
+                                                        (apply string-append (map (lambda (v) (string-append v ",")) active-codes)))
                                          frame '(ok-cancel no-icon))])
               (case content
                 [(ok)
-                 (if (user-insert! "" random-str)
-                     (begin (update-users-list)
-                            (message-box *add-active-code* *add-complete* frame '(ok no-icon)))
-                     (message-box *add-active-code* *add-failed* frame '(ok no-icon)))]
+                 (cond
+                   [(user-insert-batch! active-codes)
+                    =>
+                    (lambda (users)
+                      (for ([user users])
+                        (update-user user (hash-count *users) #f))
+                      ;; update list box after added all of the users
+                      (init-users)
+                      (message-box *add-active-code* *add-complete* frame '(ok no-icon)))]
+                   [else
+                    (message-box *add-active-code* *add-failed* frame '(ok no-icon))])]
                 [(cancel) (void)]))))]))
 
 (define refresh-btn
@@ -80,7 +98,7 @@
        [label *refresh*]
        [callback
         (lambda (btn evt)
-          (update-users-list))]))
+          (init-users))]))
 
 (define copy-btn
   (new button%
@@ -88,11 +106,27 @@
        [label *copy-selection*]
        [callback
         (lambda (btn evt)
-          (let ([selections (send users-list-box get-selections)]
+          (let ([index (send users-list-box get-selected-index)]
                 [time (send evt get-time-stamp)])
-            (for ([index selections])
-              (send the-clipboard set-clipboard-string (UserData-serial-no (list-ref *data* index)) time)
+            (when index
+              (define user-id (User-user-id (list-ref (hash-values *users) index)))
+              (send the-clipboard set-clipboard-string (User-serial-no (hash-ref *users user-id)) time)
               (message-box *copy-selection* *copy-successful* frame '(ok no-icon)))))]))
+
+(define change-comment-btn
+  (new button%
+       [parent top-hpanel]
+       [label *change-comment*]
+       [callback
+        (lambda (btn evt)
+          (let ([index (send users-list-box get-selected-index)]
+                [time (send evt get-time-stamp)])
+            (when index
+              (define user-id (User-user-id (list-ref (hash-values *users) index)))
+              (let ([comment (get-text-from-user *change-comment* "Comment Content")])
+                (when (and comment (non-empty-string? comment))
+                  (let ([users (user-update-comment! user-id comment)])
+                    (update-user (car users) user-id)))))))]))
 
 (define unregister-btn
   (new button%
@@ -100,14 +134,18 @@
        [label *unregister-selection*]
        [callback
         (lambda (btn evt)
-          (let ([selections (send users-list-box get-selections)]
+          (let ([index (send users-list-box get-selected-index)]
                 [time (send evt get-time-stamp)])
-            (for ([index selections])
-              (if (user-unregister-mac! (UserData-user-id (list-ref *data* index)))
-                  (let ()
-                    (message-box *unregister-selection* *unregister-successful* frame '(ok no-icon))
-                    (update-users-list))
-                  (message-box *unregister-selection* *unregister-failed* frame '(ok no-icon))))))]))
+            (when index
+              (define user-id (User-user-id (list-ref (hash-values *users) index)))
+              (cond
+                [(user-unregister-mac! user-id)
+                 =>
+                 (lambda (users)
+                   (message-box *unregister-selection* *unregister-successful* frame '(ok no-icon))
+                   (update-user (car users) user-id))]
+                [else
+                 (message-box *unregister-selection* *unregister-failed* frame '(ok no-icon))]))))]))
 
 (define delete-btn
   (new button%
@@ -115,35 +153,51 @@
        [label *delete-selection*]
        [callback
         (lambda (btn evt)
-          (let ([selections (send users-list-box get-selections)]
+          (let ([index (send users-list-box get-selected-index)]
                 [time (send evt get-time-stamp)])
-            (for ([index selections])
-              (if (delete-user-by-id! (UserData-user-id (list-ref *data* index)))
+            (when index
+              (define user-id (User-user-id (list-ref (hash-values *users) index)))
+              (if (delete-user-by-id! user-id)
                   (let ()
                     (message-box *delete-selection* *delete-successful* frame '(ok no-icon))
-                    (update-users-list))
+                    (hash-remove! *users user-id)
+                    (update-list-box))
                   (message-box *delete-selection* *delete-failed* frame '(ok no-icon))))))]))
 
+(define (update-user user uid [with-ui #t])
+  (when (and user uid)
+    (hash-set! *users uid
+               (User (user-id user) (user-mac user)
+                     (user-serial-no user) (user-updated-at user)
+                     (get-active-date (user-updated-at user)) (user-comment user))))
+  (when with-ui (update-list-box)))
 
-(define (update-users-list)
-  (let ([users (get-all-users)])
-    (let ([line
-           (for/list ([u users])
-             (string-append
-              "id:" (number->string (user-id u))
-              "|" *active-code* ":" (user-serial-no u)
-              "|" *mac-address* ":" (user-mac u)
-              "|" *active-date* ":" (number->string (user-active-date (user-serial-no u)))
-              "|" *update-time* ":" (datetime->iso8601 (user-updated-at u))))]
-          [data
-           (for/list ([u users])
-             (UserData (user-id u) (user-mac u) (user-serial-no u) (user-updated-at u)))])
-      (set! *data* data)
-      (send users-list-box set line))))
+
+(define (init-users)
+  (hash-clear! *users)
+  (let* ([users (get-all-users)])
+    (for ([u users])
+      (hash-set! *users (user-id u)
+                 (User (user-id u) (user-mac u)
+                       (user-serial-no u) (user-updated-at u)
+                       (get-active-date (user-updated-at u)) (user-comment u)))))
+  (update-list-box))
+
+(define (update-list-box)
+  (define line
+    (for/list ([(id u) *users])
+      (string-append
+       "id:" (number->string (User-user-id u))
+       "|" *active-code* ":" (User-serial-no u)
+       "|" *mac-address* ":" (User-mac u)
+       "|" *active-date* ":" (number->string (User-active-date u))
+       "|" *change-comment* ":" (User-comment u)
+       "|" *update-time* ":" (datetime->iso8601 (User-updated-at u)))))
+  (send users-list-box set-items line))
 
 (void
  (thread
   (lambda ()
-    (update-users-list))))
+    (init-users))))
 
 (send frame show #t)
