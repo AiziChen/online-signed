@@ -13,14 +13,11 @@
 
 (load-locales! "resources/locales/")
 (define *app-title* (translate 'app-title))
-(define *add-active-code* (translate 'add-active-code))
-(define *add-active-code?* (translate 'add-active-code?))
-(define *add-complete* (translate 'add-complete))
-(define *add-failed* (translate 'add-failed))
 (define *refresh* (translate 'refresh))
 (define *copy-selection* (translate 'copy-selection))
 (define *copy-successful* (translate 'copy-successful))
 (define *change-comment* (translate 'change-comment))
+(define *comment* (translate 'comment))
 (define *unregister-selection* (translate 'unregister-selection))
 (define *unregister-successful* (translate 'unregister-successful))
 (define *unregister-failed* (translate 'unregister-failed))
@@ -30,6 +27,12 @@
 (define *add* (translate 'add))
 (define *mac-address* (translate 'mac-address))
 (define *active-code* (translate 'active-code))
+(define *add-active-codes* (translate 'add-active-codes))
+(define *add-active-codes?* (translate 'add-active-codes?))
+(define *add-active-code* (translate 'add-active-code))
+(define *add-active-code?* (translate 'add-active-code?))
+(define *add-complete* (translate 'add-complete))
+(define *add-failed* (translate 'add-failed))
 (define *active-date* (translate 'active-date))
 (define *update-time* (translate 'update-time))
 
@@ -65,7 +68,7 @@
        [label *add*]
        [callback
         (lambda (btn evt)
-          (define countstr (get-text-from-user "How much active code would you add?" "active code numbers"))
+          (define countstr (get-text-from-user *add-active-codes?* *add-active-codes*))
           (define count (and countstr (string->number countstr)))
           (when count
             (define active-codes
@@ -122,7 +125,7 @@
                 [time (send evt get-time-stamp)])
             (when index
               (define user-id (User-user-id (list-ref *users index)))
-              (let ([comment (get-text-from-user *change-comment* "Comment Content")])
+              (let ([comment (get-text-from-user *change-comment* *comment*)])
                 (when (and comment (non-empty-string? comment))
                   (let ([users (user-update-comment! user-id comment)])
                     (update-user (car users) index)))))))]))
