@@ -192,7 +192,7 @@
        "|" *active-code* ":" (User-serial-no u)
        "|" *mac-address* ":" (User-mac u)
        "|" *active-date* ":" (number->string (User-active-date u))
-       "|" *change-comment* ":" (User-comment u)
+       "|" *comment* ":" (User-comment u)
        "|" *update-time* ":" (datetime->iso8601 (User-updated-at u)))))
   (send users-list-box set-items line))
 
