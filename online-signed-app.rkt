@@ -36,7 +36,7 @@
 (define *active-date* (translate 'active-date))
 (define *update-time* (translate 'update-time))
 
-(struct User (user-id mac serial-no updated-at active-date comment) #:transparent)
+(struct User (user-id mac serial-no updated-at active? active-date comment) #:transparent)
 (define *users '())
 
 (define frame
@@ -170,7 +170,7 @@
     (set! *users
           (list-set *users index
                     (User (user-id user) (user-mac user)
-                          (user-serial-no user) (user-updated-at user)
+                          (user-serial-no user) (user-updated-at user) (user-is-active user)
                           (get-active-date (user-updated-at user)) (user-comment user)))))
   (when with-ui (update-list-box)))
 
@@ -180,7 +180,7 @@
     (set! *users
           (for/list ([u users])
             (User (user-id u) (user-mac u)
-                  (user-serial-no u) (user-updated-at u)
+                  (user-serial-no u) (user-updated-at u) (user-is-active u)
                   (get-active-date (user-active-at u)) (user-comment u)))))
   (update-list-box))
 
@@ -191,7 +191,7 @@
        "id:" (number->string (User-user-id u))
        "|" *active-code* ":" (User-serial-no u)
        "|" *mac-address* ":" (User-mac u)
-       "|" *active-date* ":" (number->string (User-active-date u))
+       "|" *active-date* ":" (if (User-active? u) (number->string (User-active-date u)) "0")
        "|" *comment* ":" (User-comment u)
        "|" *update-time* ":" (datetime->iso8601 (User-updated-at u)))))
   (send users-list-box set-items line))

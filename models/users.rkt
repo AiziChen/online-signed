@@ -28,6 +28,7 @@
    [[mac ""] string/f]
    [serial-no string/f #:unique #:contract non-empty-string?]
    [[comment ""] string/f]
+   [[is-active #f] boolean/f]
    [[active-at (now)] datetime/f]
    [[created-at (now)] datetime/f]
    [[updated-at (now)] datetime/f]))
@@ -82,9 +83,14 @@
             (~> (from user #:as u)
                 (where (and (= mac "")
                             (= u.serial-no ,serial-no))))))
-  (and u (update! *conn*
-                  (update-user-mac u (lambda (_) mac))
-                  (update-user-active-at u (lambda (_) (now))))))
+  (if (user-is-active u)
+      (and u (update! *conn*
+                      (update-user-mac u (lambda (_) mac))
+                      (update-user-active-at u (lambda (_) (user-active-at u)))))
+      (and u (update! *conn*
+                      (update-user-mac u (lambda (_) mac))
+                      (update-user-is-active (lambda () #t))
+                      (update-user-active-at u (lambda (_) (now)))))))
 
 (define (user-unregister-mac! id)
   (define u
