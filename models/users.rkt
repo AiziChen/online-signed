@@ -28,6 +28,7 @@
    [[mac ""] string/f]
    [serial-no string/f #:unique #:contract non-empty-string?]
    [[comment ""] string/f]
+   [[active-at (now)] datetime/f]
    [[created-at (now)] datetime/f]
    [[updated-at (now)] datetime/f]))
 
@@ -83,16 +84,14 @@
                             (= u.serial-no ,serial-no))))))
   (and u (update! *conn*
                   (update-user-mac u (lambda (_) mac))
-                  (update-user-updated-at u (lambda (_) (now))))))
+                  (update-user-active-at u (lambda (_) (now))))))
 
 (define (user-unregister-mac! id)
   (define u
     (lookup *conn*
             (~> (from user #:as u)
                 (where (= u.id ,id)))))
-  (and u (update! *conn*
-                  (update-user-mac u (lambda (_) ""))
-                  (update-user-updated-at u (lambda (_) (user-updated-at u))))))
+  (and u (update! *conn* (update-user-mac u (lambda (_) "")))))
 
 (define (user-update-comment! id comment)
   (define u
@@ -135,6 +134,6 @@
             (~> (from user #:as u)
                 (where (= u.serial-no ,serial-no)))))
   (if u
-      (let ([updated-at (user-updated-at u)])
-        (+ (days-between (->datetime/local updated-at) (now)) 1))
+      (let ([active-at (user-active-at u)])
+        (+ (days-between (->datetime/local active-at) (now)) 1))
       -1))

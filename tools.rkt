@@ -45,5 +45,5 @@
   (member pass (get-passes duration)))
 
 
-(define (get-active-date updated-at)
-  (+ (days-between (->datetime/local updated-at) (now)) 1))
+(define (get-active-date active-at)
+  (+ (days-between (->datetime/local active-at) (now)) 1))

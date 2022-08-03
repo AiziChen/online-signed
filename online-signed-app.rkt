@@ -181,7 +181,7 @@
           (for/list ([u users])
             (User (user-id u) (user-mac u)
                   (user-serial-no u) (user-updated-at u)
-                  (get-active-date (user-updated-at u)) (user-comment u)))))
+                  (get-active-date (user-active-at u)) (user-comment u)))))
   (update-list-box))
 
 (define (update-list-box)
