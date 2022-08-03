@@ -9,7 +9,6 @@
    (connection-pool
     (lambda ()
       (postgresql-connect
-       #:server "quanye.org"
        #:database "online_signed"
        #:user "postgres"
        #:password "quanyec")))))
