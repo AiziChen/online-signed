@@ -89,7 +89,7 @@
                       (update-user-active-at u (lambda (_) (user-active-at u)))))
       (and u (update! *conn*
                       (update-user-mac u (lambda (_) mac))
-                      (update-user-is-active (lambda () #t))
+                      (update-user-is-active u (lambda (_) #t))
                       (update-user-active-at u (lambda (_) (now)))))))
 
 (define (user-unregister-mac! id)
