@@ -22,5 +22,6 @@
   (mac-address . "mac Address")
   (active-code . "Active code")
   (active-date . "Active date")
+  (expired-time . "Expired time")
   (update-time . "Updated time")
 )

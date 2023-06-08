@@ -20,7 +20,8 @@
  get-all-users
  delete-user-by-id!
  check-unique
- user-active-date)
+ user-active-date
+ user-available-time)
 
 ;;; USER MODEL
 (define-schema user
@@ -29,7 +30,10 @@
    [serial-no string/f #:unique #:contract non-empty-string?]
    [[comment ""] string/f]
    [[created-at (now)] datetime/f]
-   [[updated-at (now)] datetime/f]))
+   [[updated-at (now)] datetime/f]
+   [active-at datetime/f #:nullable]
+   ;; default available time: 1 day
+   [[expired-at (+hours (now) 24)] datetime/f]))
 
 ;;; initial user
 (unless (table-exists? *conn* "users")
@@ -63,11 +67,10 @@
   (>= (length rs) 1))
 
 ;;; INSERT
-(define (user-insert! mac serial-no [updated-at (now)])
+(define (user-insert! mac serial-no)
   (insert-one! *conn*
                (make-user #:mac mac
-                          #:serial-no serial-no
-                          #:updated-at updated-at)))
+                          #:serial-no serial-no)))
 
 (define (user-insert-batch! serial-nos)
   (apply insert!
@@ -83,7 +86,7 @@
                             (= u.serial-no ,serial-no))))))
   (and u (update! *conn*
                   (update-user-mac u (lambda (_) mac))
-                  (update-user-updated-at u (lambda (_) (now))))))
+                  (update-user-active-at u (lambda (_) (now))))))
 
 (define (user-unregister-mac! id)
   (define u
@@ -92,7 +95,8 @@
                 (where (= u.id ,id)))))
   (and u (update! *conn*
                   (update-user-mac u (lambda (_) ""))
-                  (update-user-updated-at u (lambda (_) (user-updated-at u))))))
+                  (update-user-updated-at u (lambda (_) (now)))
+                  (update-user-active-at u (lambda (_) (user-active-at u))))))
 
 (define (user-update-comment! id comment)
   (define u
@@ -119,8 +123,8 @@
       (delete-one! *conn* u)
       #f))
 
-;;; CHECK
 
+;;; CHECK
 (define (check-unique serial-no)
   (define u
     (lookup *conn*
@@ -135,6 +139,15 @@
             (~> (from user #:as u)
                 (where (= u.serial-no ,serial-no)))))
   (if u
-      (let ([updated-at (user-updated-at u)])
-        (+ (days-between (->datetime/local updated-at) (now)) 1))
+      (let ([active-at (user-active-at u)])
+        (+ (days-between (->datetime/local active-at) (now)) 1))
       -1))
+
+(define (user-available-time serial-no)
+  (define u
+    (lookup *conn*
+            (~> (from user #:as u)
+                (where (= u.serial-no ,serial-no)))))
+  (if u
+      (seconds-between (now) (user-expired-at u))
+      (- (current-seconds))))

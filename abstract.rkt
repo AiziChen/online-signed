@@ -27,7 +27,7 @@
                (verify-pass mpass *duration*))
           (let* ([pre-response-data (hasheq 'time (current-milliseconds)
                                             'random serial-no
-                                            'active-date (user-active-date serial-no))]
+                                            'available-time (user-available-time serial-no))]
                  [response-data (xor-cipher! (jsexpr->bytes pre-response-data) *pass*)]
                  [en-response-data (base64-encode response-data "")])
             (cond
