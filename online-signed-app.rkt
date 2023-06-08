@@ -8,10 +8,13 @@
          racket/class
          racket/string
          racket/list
+         srfi/29
          "models/users.rkt"
          "tools.rkt")
 
 (load-locales! "resources/locales/")
+(current-language 'zh)
+(current-country 'cn)
 (define *app-title* (translate 'app-title))
 (define *refresh* (translate 'refresh))
 (define *copy-selection* (translate 'copy-selection))
@@ -25,6 +28,7 @@
 (define *delete-successful* (translate 'delete-successful))
 (define *delete-failed* (translate 'delete-failed))
 (define *add* (translate 'add))
+(define *id* (translate 'id))
 (define *mac-address* (translate 'mac-address))
 (define *active-code* (translate 'active-code))
 (define *add-active-codes* (translate 'add-active-codes))
@@ -188,7 +192,7 @@
   (define line
     (for/list ([u *users])
       (string-append
-       "id:" (number->string (User-user-id u))
+       *id* ":" (number->string (User-user-id u))
        "|" *active-code* ":" (User-serial-no u)
        "|" *mac-address* ":" (User-mac u)
        "|" *active-date* ":" (number->string (User-active-date u))
