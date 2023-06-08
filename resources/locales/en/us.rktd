@@ -1,5 +1,5 @@
 (
-  (app-title . "Database explorer")
+  (app-title . "Active Code Manager")
   (refresh . "Refresh")
   (copy-selection . "Copy selection")
   (copy-successful . "Copy succssful")
@@ -18,6 +18,7 @@
   (add-active-code? . "Add active code?")
   (add-complete . "Added successful")
   (add-failed . "Added failed")
+  (id . "ID")
   (mac-address . "mac Address")
   (active-code . "Active code")
   (active-date . "Active date")

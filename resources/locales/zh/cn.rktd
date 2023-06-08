@@ -1,5 +1,5 @@
 (
-  (app-title . "数据库查看工具")
+  (app-title . "激活码管理器")
   (add-complete . "添加成功")
   (add-failed . "添加失败")
   (refresh . "刷新")
@@ -18,6 +18,7 @@
   (add-active-codes? . "添加激活码的数量")
   (add-active-code . "添加激活码")
   (add-active-code? . "是否添加以下激活码到数据库中")
+  (id . "序号")
   (mac-address . "mac地址")
   (active-code . "激活码")
   (active-date . "激活天数")
