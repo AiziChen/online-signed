@@ -17,6 +17,7 @@
  user-update-mac!
  user-unregister-mac!
  user-update-comment!
+ user-change-time!
  get-all-users
  delete-user-by-id!
  check-unique
@@ -104,6 +105,14 @@
                        (where (= u.id ,id)))))
   (and u (update! *conn* (update-user-comment u (lambda (_) comment)))))
 
+(define (user-change-time! id days hours)
+  (define u
+    (lookup *conn* (~> (from user #:as u)
+                       (where (= u.id ,id)))))
+  (and u (update! *conn*
+                  (update-user-expired-at u
+                                          (lambda (_)
+                                            (+hours (+days (user-expired-at u) days) hours))))))
 
 ;;; QUERY
 (define (get-all-users)

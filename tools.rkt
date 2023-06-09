@@ -10,7 +10,7 @@
  now-pass
  get-passes
  verify-pass
- get-active-date)
+ get-remain-info)
 
 (define/contract (xor-cipher! data secret)
   (-> bytes? non-empty-string? bytes?)
@@ -45,5 +45,10 @@
   (member pass (get-passes duration)))
 
 
-(define (get-active-date expired-at)
-  (+ (days-between (->datetime/local expired-at) (now)) 1))
+(define (get-remain-info expired-at)
+  (string-append
+   (number->string (days-between (now) (->datetime/local expired-at)))
+   "天"
+   ","
+   (number->string (remainder (hours-between (now) (->datetime/local expired-at)) 24))
+   "小时"))

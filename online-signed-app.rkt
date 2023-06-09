@@ -37,7 +37,8 @@
 (define *add-active-code?* (translate 'add-active-code?))
 (define *add-complete* (translate 'add-complete))
 (define *add-failed* (translate 'add-failed))
-(define *active-date* (translate 'active-date))
+(define *active-time* (translate 'active-time))
+(define *remain-time* (translate 'remain-time))
 (define *expired-time* (translate 'expired-time))
 (define *update-time* (translate 'update-time))
 
@@ -165,10 +166,35 @@
             (when index
               (define user-id (User-user-id (list-ref *users index)))
               (if (delete-user-by-id! user-id)
-                  (let ()
+                  (begin
                     (message-box *delete-selection* *delete-successful* frame '(ok no-icon))
                     (init-users))
                   (message-box *delete-selection* *delete-failed* frame '(ok no-icon))))))]))
+
+(define change-time-btn
+  (new button%
+       [parent top-hpanel]
+       [label "更改到期时间"]
+       [callback
+        (lambda (btn evt)
+          (let ([index (send users-list-box get-selected-index)])
+            (when index
+              (define numstr (get-text-from-user "更改到期时间" "增加或减少到期时间，格式：+/-天.小时"))
+              (define num (and numstr (string->number numstr)))
+              (when num
+                (define nums (string-split numstr "."))
+                (define-values (days hours)
+                  (if (= (length nums) 2)
+                      (values (string->number (car nums)) (string->number (cadr nums)))
+                      (values (string->number (car nums)) 0)))
+                (when (string-contains? numstr "-")
+                  (set! hours (- hours)))
+                (define user-id (User-user-id (list-ref *users index)))
+                (if (user-change-time! user-id days hours)
+                    (begin
+                      (message-box "更改到期时间" "更改成功" frame '(ok no-icon))
+                      (init-users))
+                    (message-box "更改到期时间" "更改失败" frame '(ok no-icon)))))))]))
 
 (define (update-user user index [with-ui #t])
   (when (and user index)
@@ -195,16 +221,25 @@
       (string-append
        *id* ":" (number->string (User-user-id u))
        "|" *active-code* ":" (User-serial-no u)
-       "|" *mac-address* ":" (User-mac u)
-       "|" *active-date* ":" (number->string (get-active-date (User-expired-at u)))
+       "|" *remain-time* ":" (get-remain-info (User-expired-at u))
        "|" *comment* ":" (User-comment u)
-       "|" *expired-time* ":" (datetime->iso8601 (User-expired-at u))
-       "|" *update-time* ":" (datetime->iso8601 (User-updated-at u)))))
+       "|" *expired-time* ":" (substring (datetime->iso8601 (User-expired-at u)) 0 16)
+       ;"|" *update-time* ":" (substring (datetime->iso8601 (User-updated-at u)) 0 16)
+       "|" *mac-address* ":" (User-mac u))))
   (send users-list-box set-items line))
 
 (void
  (thread
   (lambda ()
-    (init-users))))
+    (init-users)
+    (let loop ()
+      (send frame set-label
+            (string-append *app-title*
+                           " "
+                           "当前时间("
+                           (substring (datetime->iso8601 (now)) 0 19)
+                           ")"))
+      (sleep 1)
+      (loop)))))
 
 (send frame show #t)
