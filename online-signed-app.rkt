@@ -15,6 +15,8 @@
 (load-locales! "resources/locales/")
 (current-language 'zh)
 (current-country 'cn)
+;(current-language 'en)
+;(current-country 'us)
 (define *app-title* (translate 'app-title))
 (define *refresh* (translate 'refresh))
 (define *copy-selection* (translate 'copy-selection))
@@ -39,8 +41,17 @@
 (define *add-failed* (translate 'add-failed))
 (define *active-time* (translate 'active-time))
 (define *remain-time* (translate 'remain-time))
+(define *days* (translate 'days))
+(define *hours* (translate 'hours))
 (define *expired-time* (translate 'expired-time))
 (define *update-time* (translate 'update-time))
+(define *change-expired-time* (translate 'change-expired-time))
+(define *change-success* (translate 'change-success))
+(define *change-failed* (translate 'change-failed))
+(define *search* (translate 'search))
+(define *search-content* (translate 'search-content))
+(define *prompt* (translate 'prompt))
+(define *no-search-content* (translate 'no-search-content))
 
 (struct User (user-id mac serial-no updated-at expired-at comment) #:transparent)
 (define *users '())
@@ -174,12 +185,12 @@
 (define change-time-btn
   (new button%
        [parent top-hpanel]
-       [label "更改到期时间"]
+       [label *change-expired-time*]
        [callback
         (lambda (btn evt)
           (let ([index (send users-list-box get-selected-index)])
             (when index
-              (define numstr (get-text-from-user "更改到期时间" "增加或减少到期时间，格式：+/-天.小时"))
+              (define numstr (get-text-from-user *change-expired-time* "增加或减少到期时间，格式：+/-天.小时"))
               (define num (and numstr (string->number numstr)))
               (when num
                 (define nums (string-split numstr "."))
@@ -192,21 +203,21 @@
                 (define user-id (User-user-id (list-ref *users index)))
                 (if (user-change-time! user-id days hours)
                     (begin
-                      (message-box "更改到期时间" "更改成功" frame '(ok no-icon))
+                      (message-box *change-expired-time* *change-success* frame '(ok no-icon))
                       (init-users))
-                    (message-box "更改到期时间" "更改失败" frame '(ok no-icon)))))))]))
+                    (message-box *change-expired-time* *change-failed* frame '(ok no-icon)))))))]))
 
 (define search-btn
   (new button%
        [parent top-hpanel]
-       [label "搜索"]
+       [label *search*]
        [callback
         (lambda (btn evt)
-          (define activated-code (get-text-from-user "搜索内容" "激活码"))
+          (define activated-code (get-text-from-user *search-content* *active-code*))
           (when activated-code
             (define search-lst (get-users-like-active-code activated-code))
             (if (empty? search-lst)
-                (message-box "提示" "无搜索内容" frame '(ok no-icon))
+                (message-box *prompt* *no-search-content* frame '(ok no-icon))
                 (update-list-box
                  (for/list ([u search-lst])
                    (User (user-id u) (user-mac u)
@@ -235,10 +246,11 @@
 (define (update-list-box users)
   (define line
     (for/list ([u users])
+      (define-values (days hours) (get-remain-info (User-expired-at u)))
       (string-append
        *id* ":" (number->string (User-user-id u))
        "|" *active-code* ":" (User-serial-no u)
-       "|" *remain-time* ":" (get-remain-info (User-expired-at u))
+       "|" *remain-time* ":" (string-append days *days* ", " hours *hours*)
        "|" *comment* ":" (User-comment u)
        "|" *expired-time* ":" (substring (datetime->iso8601 (User-expired-at u)) 0 16)
        ;"|" *update-time* ":" (substring (datetime->iso8601 (User-updated-at u)) 0 16)

@@ -46,9 +46,6 @@
 
 
 (define (get-remain-info expired-at)
-  (string-append
+  (values
    (number->string (days-between (now) (->datetime/local expired-at)))
-   "天"
-   ","
-   (number->string (remainder (hours-between (now) (->datetime/local expired-at)) 24))
-   "小时"))
+   (number->string (remainder (hours-between (now) (->datetime/local expired-at)) 24))))
