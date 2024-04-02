@@ -196,6 +196,23 @@
                       (init-users))
                     (message-box "更改到期时间" "更改失败" frame '(ok no-icon)))))))]))
 
+(define search-btn
+  (new button%
+       [parent top-hpanel]
+       [label "搜索"]
+       [callback
+        (lambda (btn evt)
+          (define activated-code (get-text-from-user "搜索内容" "激活码"))
+          (when activated-code
+            (define search-lst (get-users-like-active-code activated-code))
+            (if (empty? search-lst)
+                (message-box "提示" "无搜索内容" frame '(ok no-icon))
+                (update-list-box
+                 (for/list ([u search-lst])
+                   (User (user-id u) (user-mac u)
+                         (user-serial-no u) (user-updated-at u)
+                         (user-expired-at u) (user-comment u)))))))]))
+
 (define (update-user user index [with-ui #t])
   (when (and user index)
     (set! *users
@@ -203,7 +220,7 @@
                     (User (user-id user) (user-mac user)
                           (user-serial-no user) (user-updated-at user)
                           (user-expired-at user) (user-comment user)))))
-  (when with-ui (update-list-box)))
+  (when with-ui (update-list-box *users)))
 
 
 (define (init-users)
@@ -213,11 +230,11 @@
             (User (user-id u) (user-mac u)
                   (user-serial-no u) (user-updated-at u)
                   (user-expired-at u) (user-comment u)))))
-  (update-list-box))
+  (update-list-box *users))
 
-(define (update-list-box)
+(define (update-list-box users)
   (define line
-    (for/list ([u *users])
+    (for/list ([u users])
       (string-append
        *id* ":" (number->string (User-user-id u))
        "|" *active-code* ":" (User-serial-no u)
@@ -235,7 +252,7 @@
     (let loop ()
       (send frame set-label
             (string-append *app-title*
-                           " "
+                           "-"
                            "当前时间("
                            (substring (datetime->iso8601 (now)) 0 19)
                            ")"))

@@ -19,6 +19,7 @@
  user-update-comment!
  user-change-time!
  get-all-users
+ get-users-like-active-code
  delete-user-by-id!
  check-unique
  user-active-date
@@ -118,6 +119,13 @@
 (define (get-all-users)
   (for/list ([b (in-entities *conn*
                              (~> (from user #:as u)
+                                 (order-by ([u.id #:desc]))))])
+    b))
+
+(define (get-users-like-active-code active-code)
+  (for/list ([b (in-entities *conn*
+                             (~> (from user #:as u)
+                                 (where (like u.serial-no ,(string-append "%" active-code "%")))
                                  (order-by ([u.id #:desc]))))])
     b))
 
