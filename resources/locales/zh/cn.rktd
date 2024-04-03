@@ -34,4 +34,5 @@
   (search-content . "搜索内容")
   (prompt . "提示")
   (no-search-content . "无搜索内容")
+  (current-time-v1 . "当前时间")
 )

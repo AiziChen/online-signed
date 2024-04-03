@@ -34,4 +34,5 @@
   (search-content . "Search Content")
   (prompt . "Prompt")
   (no-search-content . "No Search Content")
+  (current-time-v1 . "CURRENT-TIME")
 )
