@@ -144,7 +144,7 @@
             (when index
               (define user-id (User-user-id (list-ref *users index)))
               (let ([comment (get-text-from-user *change-comment* *comment*)])
-                (when (and comment (non-empty-string? comment))
+                (when comment
                   (let ([users (user-update-comment! user-id comment)])
                     (update-user (car users) index)))))))]))
 
