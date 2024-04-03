@@ -52,6 +52,7 @@
 (define *search-content* (translate 'search-content))
 (define *prompt* (translate 'prompt))
 (define *no-search-content* (translate 'no-search-content))
+(define *current-time-v1* (translate 'current-time-v1))
 
 (struct User (user-id mac serial-no updated-at expired-at comment) #:transparent)
 (define *users '())
@@ -264,8 +265,9 @@
     (let loop ()
       (send frame set-label
             (string-append *app-title*
-                           "-"
-                           "当前时间("
+                           " "
+                           *current-time-v1*
+                           "("
                            (substring (datetime->iso8601 (now)) 0 19)
                            ")"))
       (sleep 1)
