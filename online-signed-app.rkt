@@ -72,12 +72,12 @@
   (new vertical-panel%
        [parent frame]))
 
-
 (define users-list-box
-  (new canvas-list%
+  (new list-box%
        [parent center-vpanel]
        [label #f]
-       [items '()]))
+       [style '(multiple)]
+       [choices '()]))
 
 
 (define add-btn
@@ -126,12 +126,16 @@
        [label *copy-selection*]
        [callback
         (lambda (btn evt)
-          (let ([index (send users-list-box get-selected-index)]
+          (let ([indexs (send users-list-box get-selections)]
                 [time (send evt get-time-stamp)])
-            (when index
-              (define user-id (User-user-id (list-ref *users index)))
-              (send the-clipboard set-clipboard-string (User-serial-no (list-ref *users index)) time)
-              (message-box *copy-selection* *copy-successful* frame '(ok no-icon)))))]))
+            (define serial-nos
+              (string-join
+               (for/list ([index indexs])
+                 (define user-id (User-user-id (list-ref *users index)))
+                 (User-serial-no (list-ref *users index)))
+               ","))
+            (send the-clipboard set-clipboard-string serial-nos time)
+            (message-box *copy-selection* *copy-successful* frame '(ok no-icon))))]))
 
 (define change-comment-btn
   (new button%
@@ -139,11 +143,12 @@
        [label *change-comment*]
        [callback
         (lambda (btn evt)
-          (let ([index (send users-list-box get-selected-index)]
+          (let ([indexs (send users-list-box get-selections)]
                 [time (send evt get-time-stamp)])
-            (when index
-              (define user-id (User-user-id (list-ref *users index)))
-              (let ([comment (get-text-from-user *change-comment* *comment*)])
+            (unless (null? indexs)
+              (define comment (get-text-from-user *change-comment* *comment*))
+              (for ([index indexs])
+                (define user-id (User-user-id (list-ref *users index)))
                 (when comment
                   (let ([users (user-update-comment! user-id comment)])
                     (update-user (car users) index)))))))]))
@@ -154,18 +159,22 @@
        [label *unregister-selection*]
        [callback
         (lambda (btn evt)
-          (let ([index (send users-list-box get-selected-index)]
+          (let ([indexs (send users-list-box get-selections)]
                 [time (send evt get-time-stamp)])
-            (when index
-              (define user-id (User-user-id (list-ref *users index)))
-              (cond
-                [(user-unregister-mac! user-id)
-                 =>
-                 (lambda (users)
-                   (message-box *unregister-selection* *unregister-successful* frame '(ok no-icon))
-                   (update-user (car users) index))]
-                [else
-                 (message-box *unregister-selection* *unregister-failed* frame '(ok no-icon))]))))]))
+            (unless (null? indexs)
+              (define total
+                (count values
+                       (for/list ([index indexs])
+                         (define user-id (User-user-id (list-ref *users index)))
+                         (cond
+                           [(user-unregister-mac! user-id)
+                            =>
+                            (lambda (users)
+                              (update-user (car users) index))]
+                           [else #f]))))
+              (if (>= total (length indexs))
+                  (message-box *unregister-selection* *unregister-successful* frame '(ok no-icon))
+                  (message-box *unregister-selection* *unregister-failed* frame '(ok no-icon))))))]))
 
 (define delete-btn
   (new button%
@@ -173,15 +182,19 @@
        [label *delete-selection*]
        [callback
         (lambda (btn evt)
-          (let ([index (send users-list-box get-selected-index)]
+          (let ([indexs (send users-list-box get-selections)]
                 [time (send evt get-time-stamp)])
-            (when index
-              (define user-id (User-user-id (list-ref *users index)))
-              (if (delete-user-by-id! user-id)
-                  (begin
-                    (message-box *delete-selection* *delete-successful* frame '(ok no-icon))
-                    (init-users))
-                  (message-box *delete-selection* *delete-failed* frame '(ok no-icon))))))]))
+            (unless (null? indexs)
+              (define total
+                (count values
+                       (for/list ([index indexs])
+                         (define user-id (User-user-id (list-ref *users index)))
+                         (delete-user-by-id! user-id))))
+              (if (>= total (length indexs))
+               (begin
+                 (message-box *delete-selection* *delete-successful* frame '(ok no-icon))
+                 (init-users))
+               (message-box *delete-selection* *delete-failed* frame '(ok no-icon))))))]))
 
 (define change-time-btn
   (new button%
@@ -189,24 +202,28 @@
        [label *change-expired-time*]
        [callback
         (lambda (btn evt)
-          (let ([index (send users-list-box get-selected-index)])
-            (when index
+          (let ([indexs (send users-list-box get-selections)])
+            (unless (null? indexs)
               (define numstr (get-text-from-user *change-expired-time* "增加或减少到期时间，格式：+/-天.小时"))
-              (define num (and numstr (string->number numstr)))
-              (when num
-                (define nums (string-split numstr "."))
-                (define-values (days hours)
-                  (if (= (length nums) 2)
-                      (values (string->number (car nums)) (string->number (cadr nums)))
-                      (values (string->number (car nums)) 0)))
-                (when (string-contains? numstr "-")
-                  (set! hours (- hours)))
-                (define user-id (User-user-id (list-ref *users index)))
-                (if (user-change-time! user-id days hours)
-                    (begin
-                      (message-box *change-expired-time* *change-success* frame '(ok no-icon))
-                      (init-users))
-                    (message-box *change-expired-time* *change-failed* frame '(ok no-icon)))))))]))
+              (define total
+                (count values
+                       (for/list ([index indexs])
+                         (define num (and numstr (string->number numstr)))
+                         (when num
+                           (define nums (string-split numstr "."))
+                           (define-values (days hours)
+                             (if (= (length nums) 2)
+                                 (values (string->number (car nums)) (string->number (cadr nums)))
+                                 (values (string->number (car nums)) 0)))
+                           (when (string-contains? numstr "-")
+                             (set! hours (- hours)))
+                           (define user-id (User-user-id (list-ref *users index)))
+                           (user-change-time! user-id days hours)))))
+              (if (>= total (length indexs))
+                  (begin
+                    (message-box *change-expired-time* *change-success* frame '(ok no-icon))
+                    (init-users))
+                  (message-box *change-expired-time* *change-failed* frame '(ok no-icon))))))]))
 
 (define search-btn
   (new button%
@@ -256,7 +273,7 @@
        "|" *expired-time* ":" (substring (datetime->iso8601 (User-expired-at u)) 0 16)
        ;"|" *update-time* ":" (substring (datetime->iso8601 (User-updated-at u)) 0 16)
        "|" *mac-address* ":" (User-mac u))))
-  (send users-list-box set-items line))
+  (send users-list-box set line))
 
 (void
  (thread
