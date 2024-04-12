@@ -87,30 +87,41 @@
        [callback
         (lambda (btn evt)
           (define countstr (get-text-from-user *add-active-codes?* *add-active-codes*))
-          (define count (and countstr (string->number countstr)))
-          (when count
-            (define active-codes
-              (for/list ([_ count])
-                (let loop ([random-str (generate-random-string 6)])
-                  (when (not (check-unique random-str))
-                    (loop (generate-random-string 6)))
-                  random-str)))
-            (let* ([content (message-box *add-active-code*
-                                         (string-append *add-active-code?* ":\n"
-                                                        (apply string-append (map (lambda (v) (string-append v ",")) active-codes)))
-                                         frame '(ok-cancel no-icon))])
-              (case content
-                [(ok)
-                 (cond
-                   [(user-insert-batch! active-codes)
-                    =>
-                    (lambda (_users)
-                      ;; update list box after added all of the users
-                      (init-users)
-                      (message-box *add-active-code* *add-complete* frame '(ok no-icon)))]
-                   [else
-                    (message-box *add-active-code* *add-failed* frame '(ok no-icon))])]
-                [(cancel) (void)]))))]))
+          (when countstr
+            (define choices (get-choices-from-user "设置有效时间" "" '("月" "季" "半年" "年")))
+            (when (= 1 (length choices))
+              (define choice (car choices))
+              (displayln choice)
+              (define days
+                (case choice
+                  [(0) 30]
+                  [(1) 90]
+                  [(2) 182]
+                  [(3) 365]))
+              (define count (string->number countstr))
+              (when count
+                (define active-codes
+                  (for/list ([_ count])
+                    (let loop ([random-str (generate-random-string 6)])
+                      (when (not (check-unique random-str))
+                        (loop (generate-random-string 6)))
+                      random-str)))
+                (let* ([content (message-box *add-active-code*
+                                             (string-append *add-active-code?* ":\n"
+                                                            (apply string-append (map (lambda (v) (string-append v ",")) active-codes)))
+                                             frame '(ok-cancel no-icon))])
+                  (case content
+                    [(ok)
+                     (cond
+                       [(user-insert-batch! active-codes days)
+                        =>
+                        (lambda (_users)
+                          ;; update list box after added all of the users
+                          (init-users)
+                          (message-box *add-active-code* *add-complete* frame '(ok no-icon)))]
+                       [else
+                        (message-box *add-active-code* *add-failed* frame '(ok no-icon))])]
+                    [(cancel) (void)]))))))]))
 
 (define refresh-btn
   (new button%
@@ -205,25 +216,26 @@
           (let ([indexs (send users-list-box get-selections)])
             (unless (null? indexs)
               (define numstr (get-text-from-user *change-expired-time* "增加或减少到期时间，格式：+/-天.小时"))
-              (define total
-                (count values
-                       (for/list ([index indexs])
-                         (define num (and numstr (string->number numstr)))
-                         (when num
-                           (define nums (string-split numstr "."))
-                           (define-values (days hours)
-                             (if (= (length nums) 2)
-                                 (values (string->number (car nums)) (string->number (cadr nums)))
-                                 (values (string->number (car nums)) 0)))
-                           (when (string-contains? numstr "-")
-                             (set! hours (- hours)))
-                           (define user-id (User-user-id (list-ref *users index)))
-                           (user-change-time! user-id days hours)))))
-              (if (>= total (length indexs))
-                  (begin
-                    (message-box *change-expired-time* *change-success* frame '(ok no-icon))
-                    (init-users))
-                  (message-box *change-expired-time* *change-failed* frame '(ok no-icon))))))]))
+              (when numstr
+                (define total
+                  (count values
+                         (for/list ([index indexs])
+                                   (define num (string->number numstr))
+                                   (when num
+                                     (define nums (string-split numstr "."))
+                                     (define-values (days hours)
+                                       (if (= (length nums) 2)
+                                           (values (string->number (car nums)) (string->number (cadr nums)))
+                                           (values (string->number (car nums)) 0)))
+                                     (when (string-contains? numstr "-")
+                                       (set! hours (- hours)))
+                                     (define user-id (User-user-id (list-ref *users index)))
+                                     (user-change-time! user-id days hours)))))
+                (if (>= total (length indexs))
+                    (begin
+                      (message-box *change-expired-time* *change-success* frame '(ok no-icon))
+                      (init-users))
+                    (message-box *change-expired-time* *change-failed* frame '(ok no-icon)))))))]))
 
 (define search-btn
   (new button%
