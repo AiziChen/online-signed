@@ -74,10 +74,11 @@
                (make-user #:mac mac
                           #:serial-no serial-no)))
 
-(define (user-insert-batch! serial-nos)
+(define (user-insert-batch! serial-nos days)
   (apply insert!
          (cons *conn* (for/list ([serial-no serial-nos])
-                        (make-user #:serial-no serial-no)))))
+                        (make-user #:serial-no serial-no
+                                   #:expired-at (+days (now) days))))))
 
 ;;; UPDATE
 (define (user-update-mac! mac serial-no)
