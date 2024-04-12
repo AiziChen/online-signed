@@ -88,16 +88,19 @@
         (lambda (btn evt)
           (define countstr (get-text-from-user *add-active-codes?* *add-active-codes*))
           (when countstr
-            (define choices (get-choices-from-user "设置有效时间" "" '("月" "季" "半年" "年")))
+            (define choices (get-choices-from-user "设置有效时间" "" '("1小时" "1天" "1月" "1季" "半年" "1年")))
             (when (= 1 (length choices))
               (define choice (car choices))
               (displayln choice)
-              (define days
+              (define hours
                 (case choice
-                  [(0) 30]
-                  [(1) 90]
-                  [(2) 182]
-                  [(3) 365]))
+                  [(0) 1]
+                  [(1) 24]
+                  [(2) (* 24 30)]
+                  [(3) (* 24 90)]
+                  [(4) (* 24 182)]
+                  [(5) (* 24 365)]
+                  [else 24]))
               (define count (string->number countstr))
               (when count
                 (define active-codes
@@ -113,7 +116,7 @@
                   (case content
                     [(ok)
                      (cond
-                       [(user-insert-batch! active-codes days)
+                       [(user-insert-batch! active-codes hours)
                         =>
                         (lambda (_users)
                           ;; update list box after added all of the users
