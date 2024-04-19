@@ -92,7 +92,6 @@
             (define choices (get-choices-from-user "设置有效时间" "" '("1小时" "1天" "1月" "1季" "半年" "1年")))
             (when (= 1 (length choices))
               (define choice (car choices))
-              (displayln choice)
               (define hours
                 (case choice
                   [(0) 1]
@@ -109,7 +108,13 @@
                     (let loop ([random-str (generate-random-string 6)])
                       (when (not (check-unique random-str))
                         (loop (generate-random-string 6)))
-                      random-str)))
+                      (string-append (case choice
+                                       [(2) "y"]
+                                       [(3) "j"]
+                                       [(4) "b"]
+                                       [(5) "n"]
+                                       [else ""])
+                                     random-str))))
                 (let* ([content (message-box *add-active-code*
                                              (string-append *add-active-code?* ":\n"
                                                             (apply string-append (map (lambda (v) (string-append v ",")) active-codes)))
