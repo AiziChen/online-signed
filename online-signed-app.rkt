@@ -12,6 +12,7 @@
          "models/users.rkt"
          "tools.rkt")
 
+(current-output-port (open-output-file ".error.log" #:mode 'text #:exists 'append))
 (load-locales! "resources/locales/")
 (current-language 'zh)
 (current-country 'cn)
