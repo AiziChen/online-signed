@@ -3,7 +3,6 @@
 (require koyo/random
          koyo/l10n
          gregor
-         canvas-list
          racket/gui/base
          racket/class
          racket/string
