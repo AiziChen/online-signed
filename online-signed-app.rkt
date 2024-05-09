@@ -256,11 +256,13 @@
             (define search-lst (get-users-like-active-code activated-code))
             (if (empty? search-lst)
                 (message-box *prompt* *no-search-content* frame '(ok no-icon))
-                (update-list-box
-                 (for/list ([u search-lst])
-                   (User (user-id u) (user-mac u)
-                         (user-serial-no u) (user-updated-at u)
-                         (user-expired-at u) (user-comment u)))))))]))
+                (begin
+                  (set! *users
+                        (for/list ([u search-lst])
+                          (User (user-id u) (user-mac u)
+                                (user-serial-no u) (user-updated-at u)
+                                (user-expired-at u) (user-comment u))))
+                  (update-list-box *users)))))]))
 
 (define (update-user user index [with-ui #t])
   (when (and user index)
